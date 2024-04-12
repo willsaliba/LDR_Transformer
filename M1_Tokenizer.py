@@ -6,6 +6,7 @@ GPT4 pattern -> https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai
 """
 import os
 import regex as regx
+import pickle
 
 class Tokenizer:
     def __init__(self):
@@ -86,9 +87,28 @@ class Tokenizer:
         for (t0, t1), idx in self.merges.items(): #items() makes map traversable & order inserted
             self.vocab[idx] = self.vocab[t0] + self.vocab[t1] #concatenating 'byte objects'
 
+    #saves tokenizer merges and vocab for inference
+    def save_tokenizer(self, filename):
+        data = {
+            'merges': self.merges,
+            'vocab': self.vocab,
+            'preTrainingSize': self.preTrainingSize,
+            'postTrainingSize': self.postTrainingSize
+        }
+        with open(filename, 'wb') as f:
+            pickle.dump(data, f)
+
     """
     Inference Functionality 
     """
+    #loading vairables from saved trained tokenizer
+    def load_tokenizer(self, filename):
+        with open(filename, 'rb') as f:
+            data = pickle.load(f)
+        self.merges = data['merges']
+        self.vocab = data['vocab']
+        self.preTrainingSize = data['preTrainingSize']
+        self.postTrainingSize = data['postTrainingSize']
 
     #Finding frequency of adjacent pairs within encoding tokenised input
     def get_counts_inf(self, ids):

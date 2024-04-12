@@ -1,8 +1,18 @@
+import os
 from M1_Tokenizer import Tokenizer
 
-Mach1 = Tokenizer()
-Mach1.run_training("mini_LDR", 500)
+#variable reloads trained tokenizer or retrains it
+train = False
 
+#intialising tokenizer and either loading or training it
+Mach1 = Tokenizer()
+if train:
+    Mach1.run_training("mini_LDR_data", 500)
+    Mach1.save_tokenizer('trained_tok.pickle')
+else:
+    Mach1.load_tokenizer('trained_tok.pickle')
+
+#testing encode and decode functionality
 text = '''
 0 !LEOCAD MODEL AUTHOR LEGO staff (unknown); .ldr from Nitrofurano;
 0 !LEOCAD MODEL DESCRIPTION 107 - Canada Post Truck - 1985
@@ -15,7 +25,7 @@ text = '''
 
 theTokens = Mach1.encode(text)
 result = Mach1.decode(theTokens)
-print(f"\nEncode & Decode Success: {result == text}")
+print(f"\nEncode & Decode Success: {result == text} \n")
 
 print(f"Dataset size pre-training: {Mach1.preTrainingSize}")
-print(f"Dataset size post-training: {Mach1.postTrainingSize}")
+print(f"Dataset size post-training: {Mach1.postTrainingSize}\n")
