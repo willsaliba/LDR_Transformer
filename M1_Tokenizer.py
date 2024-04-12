@@ -1,11 +1,18 @@
+"""
+MACH1 TOKENIZER
+-Initial implementation of custom LDR tokenizer, which uses the GPT4 pre-tokenization pattern
+
+GPT4 pattern -> https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py
+"""
 import os
 import regex as regx
-#GPT4 pattern -> https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py
 
-class M1_Tokenizer:
+class Tokenizer:
     def __init__(self):
         self.merges = {}
         self.vocab = {}
+        self.preTrainingSize = -1
+        self.postTrainingSize = -1
 
     """
     Training Functionality 
@@ -44,6 +51,9 @@ class M1_Tokenizer:
                 with open(file_path, 'r') as file:
                     rawLDR += file.read()
 
+        #saving initial file size
+        self.preTrainingSize = len(rawLDR)
+
         #pretokenize raw LDR data it using GPT-4 pattern
         gpt4_pattern = regx.compile(r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+""")
         raw_subUnits = regx.findall(gpt4_pattern, rawLDR)
@@ -66,6 +76,9 @@ class M1_Tokenizer:
             #print statement to show progress
             if (i + 1) % 100 == 0:
                 print(f"Processed {i + 1} merges")
+
+        #saving final file size
+        self.postTrainingSize = sum(len(subUnit) for subUnit in subUnits)
 
         #finalise vocabulary
         for idx in range(256): 
@@ -117,13 +130,3 @@ class M1_Tokenizer:
         text = byteTokens.decode("utf-8", errors="replace")
         return text
 
-
-#Testing stuff
-"""
-Mach1 = M1_Tokenizer()
-Mach1.run_training("mini_LDR", 500)
-text = "0 !LEOCAD MODEL AUTHOR LEGO staff (unknown);"
-theTokens = Mach1.encode(text)
-result = Mach1.decode(theTokens)
-print(f"\nEncode & Decode Success: {result == text}")
-"""
