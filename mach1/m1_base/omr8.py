@@ -1,16 +1,21 @@
 import os
 from M1_Tokenizer import Tokenizer
 
-#variable reloads trained tokenizer or retrains it
-train = False
+#hyper params controlling training / loading
+train = True
+vocab_size = 30000
+data_dir = '/Users/willsaliba/Documents/1code/uni/advTopics/data/omr/sorted/8bricks' 
+trained_tokenizer = 'omr8.pickle'
 
 #intialising tokenizer and either loading or training it
 Mach1 = Tokenizer()
 if train:
-    Mach1.run_training("mini_LDR_data", 500)
-    Mach1.save_tokenizer('trained_tok.pickle')
+    Mach1.run_training(data_dir, vocab_size)
+    Mach1.save_tokenizer(trained_tokenizer)
+    print(f"Tokenizer trained and saved as: {trained_tokenizer}\n\n")
 else:
-    Mach1.load_tokenizer('trained_tok.pickle')
+    Mach1.load_tokenizer(trained_tokenizer)
+    print(f"Tokenizer loaded from: {trained_tokenizer}\n\n")
 
 #testing encode and decode functionality
 text = '''

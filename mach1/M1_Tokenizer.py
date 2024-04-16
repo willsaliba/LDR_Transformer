@@ -47,7 +47,7 @@ class Tokenizer:
         #ingest all training data from directory
         rawLDR = ""
         for filename in os.listdir(directory):
-            if filename.endswith(".ldr"):
+            if filename.endswith(".ldr") or filename.endswith(".mpd"):
                 file_path = os.path.join(directory, filename)
                 with open(file_path, 'r') as file:
                     rawLDR += file.read()
@@ -66,22 +66,27 @@ class Tokenizer:
             int_subUnit = list(map(int, byte_subUnit))
             subUnits.append(int_subUnit)
 
-        #perform merges
+        #performing merges:
         num_merges = vocab_size - 256
         for i in range(num_merges):
+            #get frequency of adjacent pairs within subUnits
             frequencies = self.get_counts(subUnits)
-            topPair = max(frequencies, key=frequencies.get) #comparares on vals rather then keys
+            if (len(frequencies) == 0):
+                print(f"No more merges possible, merges completeted: {i+1}")
+                break
+            
+            #get most frequent pair, merge them and add new token
+            topPair = max(frequencies, key=frequencies.get) 
             newID = 256 + i
             subUnits = self.merge_tokens(subUnits, topPair, newID)
             self.merges[topPair] = newID
+
             #print statement to show progress
             if (i + 1) % 100 == 0:
                 print(f"Processed {i + 1} merges")
 
-        #saving final file size
+        #save final file size & finalise vocabulary 
         self.postTrainingSize = sum(len(subUnit) for subUnit in subUnits)
-
-        #finalise vocabulary
         for idx in range(256): 
             self.vocab[idx] = bytes([idx]) #bytes needs list arg
         for (t0, t1), idx in self.merges.items(): #items() makes map traversable & order inserted
