@@ -2,11 +2,11 @@ import os
 from M1_Tokenizer import Tokenizer
 
 #hyper params controlling training / loading
-vocab_size = 30000
-data_dir = '/Users/willsaliba/Documents/1code/uni/advTopics/data/omr/sorted/2bricks'
-trained_tokenizer = 'test2.pickle'
+vocab_size = 1300
+data_dir = 'path/to/your/LDR/files'
+trained_tokenizer = 'trainedTok.pickle'
 
-#intialising tokenizer and either loading or training it
+#intialising tokenizer, training it then saving it
 Mach1 = Tokenizer()
 Mach1.run_training(data_dir, vocab_size)
 print(f"Tokenizer successfully trained")
@@ -23,8 +23,7 @@ text = '''
 1 4 -80 -80 110 1 0 0 0 1 0 0 0 1 3010.DAT
 1 4 -80 -80 -10 0 0 1 0 1 0 -1 0 0 3002.DAT
 '''
-result = Mach1.decode(Mach1.encode(text))
-print(f"\nTokenizer Working Properly: {result == text} \n")
+print(f"\nTokenizer Working Properly: {Mach1.decode(Mach1.encode(text)) == text} \n")
 
 #inspecting compression
 print(f"Dataset size pre-training: {Mach1.preTrainingSize}")

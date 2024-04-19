@@ -1,9 +1,9 @@
 """
-MACH1 TOKENIZER
--Initial implementation of custom LDR tokenizer, which uses the GPT4 pre-tokenization pattern
-
-GPT4 pattern -> https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py
+MARK1 TOKENIZER
+-First implementation of custom LDR tokenizer, which uses BPE paired with GPT4 pre-tokenization pattern 
+GPT4 pattern: https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py
 """
+
 import os
 import regex as regx
 import pickle

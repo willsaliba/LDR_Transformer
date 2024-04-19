@@ -1,13 +1,14 @@
-import os
 from M1_Tokenizer import Tokenizer
 
-#hyper params controlling loading
-trained_tokenizer = 'test2.pickle'
+#pick the tokenizer
+trained_tokenizer = 'mark1/m1_turbo/omr8_turbo.pickle'
 
 #loading trained tokenizer values
-Mach1 = Tokenizer()
-Mach1.load_tokenizer(trained_tokenizer)
-print(f"Tokenizer loaded from: {trained_tokenizer}\n\n")
+Mark1 = Tokenizer()
+Mark1.load_tokenizer(trained_tokenizer)
+print(f"Tokenizer loaded from: {trained_tokenizer}")
+print(f"Num merges: {len(Mark1.merges)}")
+print(f"Final Vocab: {len(Mark1.vocab)}")
 
 #quick test to ensure tokenizer loaded properly
 text = '''
@@ -19,5 +20,4 @@ text = '''
 1 4 -80 -80 110 1 0 0 0 1 0 0 0 1 3010.DAT
 1 4 -80 -80 -10 0 0 1 0 1 0 -1 0 0 3002.DAT
 '''
-result = Mach1.decode(Mach1.encode(text))
-print(f"\nTokenizer Working Properly: {result == text} \n")
+print(f"\nTokenizer Working Properly: {Mark1.decode(Mark1.encode(text)) == text} \n")
