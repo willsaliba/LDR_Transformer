@@ -21,6 +21,41 @@ import typer
 from tokenizers import Tokenizer, trainers
 from tokenizers.trainers import BpeTrainer
 
+import os
+from tokenizers import Tokenizer, Regex, pre_tokenizers
+from tokenizers.models import BPE
+from tokenizers.pre_tokenizers import Split
+from tokenizers.trainers import BpeTrainer
+from transformers import PreTrainedTokenizerFast
+
+### HYPER PARAMS ###
+vocab_size = 3000
+tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/transformer/trained_tokenizerM2/"
+tokenizer_train_path = "/Users/willsaliba/Documents/code/uni/advTopics/data/mini_data/train/"
+
+#creating BPE tokenizer with GPT4 regex
+tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
+
+# r"(?i)[sdmt]|ll|ve|re|[^\r\n\w]?+[a-zA-Z]+|\d{1,3}|\s?[^\s\w]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"
+re_pattern = r"(?i)[sdmt]|ll|ve|re|[^\r\n\w]?+[a-zA-Z]+|\d{1,3}|\s?[^\s\w]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"
+tokenizer.pre_tokenizer = Split(pattern=Regex(re_pattern), behavior="isolated")
+
+""" """
+#getting tokenizer training data
+files = []
+for file_name in os.listdir(tokenizer_train_path):
+    file_path = os.path.join(tokenizer_train_path, file_name)
+    files.append(file_path)
+trainer = BpeTrainer(vocab_size = vocab_size, special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"])
+tokenizer.train(files, trainer)
+
+#removing pre-exisiting files in tokenizer_save_path
+for file_name in os.listdir(tokenizer_save_path):
+    file_path = os.path.join(tokenizer_save_path, file_name)
+    os.remove(file_path)
+
+tokenizer.save(tokenizer_save_path+"tokenizer.json")
+
 #NEED TO UPDATE TO TOKENIZER PATTERN (GPT-4)
 FN_P = r"([-+]?(?:\d*\.*\d+))"
 LDR_INSTRUCTION_REGEX_PATTERN = re.compile(
@@ -57,7 +92,7 @@ def load_all_ldrs(root_dir: Path, decimals: int = 2):
 #creates the LDR text data set
 class LDRTextDataset(Dataset):
     def __init__(self, lines, tokenizer,):
-        self.examples = tokenizer.batch_encode_plus(lines).input_ids
+        self.examples = tokenizer.encode(lines).input_ids
 
     def __len__(self):
         return len(self.examples)
@@ -86,57 +121,55 @@ def main(
     eval_lines = load_all_ldrs(ldr_root_dir / "test")
     
     #Loading Tokenizer
-    tokenizer_path = Path('/Users/willsaliba/Documents/code/uni/advTopics/transformer/trained_tokenizerM2')
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, model_max_length=n_positions)
-    print("-- Tokenizer Loaded --")
-    
-    # tokenizer.train_from_iterator(files, trainer=trainer)
+    # tokenizer_path = "/Users/willsaliba/Documents/code/uni/advTopics/transformer/trained_tokenizerM2/tokenizer.json"
+    # tokenizer = Tokenizer.from_file(tokenizer_path)
+    # print("-- Tokenizer Loaded --")
 
-    # #creating training dataset
-    # train_dataset = LDRTextDataset(train_lines, tokenizer)
-    # eval_dataset = LDRTextDataset(eval_lines, tokenizer)
+    #creating training dataset
+    train_dataset = LDRTextDataset(train_lines, tokenizer)
+    eval_dataset = LDRTextDataset(eval_lines, tokenizer)
 
-    # data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
     
-    # #will need to change
-    # config = GPT2Config(vocab_size=tokenizer.vocab_size, n_positions=n_positions,)
+    #will need to change
+    config = GPT2Config(vocab_size=tokenizer.vocab_size, n_positions=n_positions,)
     
-    # #loading pretrained model if it exisits, otherwise training new one
-    # if checkpoint_dir and checkpoint_dir.exists():
-    #     model = AutoModelForCausalLM.load_pretrained(checkpoint_dir)
-    #     logger.info(f"model loaded from {checkpoint_dir}")
-    # else:
-    #     model = AutoModelForCausalLM.from_config(config)
-    #     logger.info("training model from scratch")
-    # logger.info(f"# trainable params: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+    #loading pretrained model if it exisits, otherwise training new one
+    if checkpoint_dir and checkpoint_dir.exists():
+        model = AutoModelForCausalLM.load_pretrained(checkpoint_dir)
+        logger.info(f"model loaded from {checkpoint_dir}")
+    else:
+        model = AutoModelForCausalLM.from_config(config)
+        logger.info("training model from scratch")
+    logger.info(f"# trainable params: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
-    # #setting training arguments (most are args for main func)
-    # training_args = TrainingArguments(
-    #     output_dir=output_dir,
-    #     overwrite_output_dir=True,
-    #     num_train_epochs=num_train_epochs,
-    #     per_device_train_batch_size=per_device_train_batch_size,
-    #     logging_steps=logging_steps,
-    #     save_steps=save_steps,
-    #     eval_steps=eval_steps,
-    #     fp16=fp16,
-    #     save_total_limit=save_total_limit,
-    #     push_to_hub=False,
-    #     learning_rate=learning_rate,
-    #     evaluation_strategy="steps",
-    # )
+    #setting training arguments (most are args for main func)
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        overwrite_output_dir=True,
+        num_train_epochs=num_train_epochs,
+        per_device_train_batch_size=per_device_train_batch_size,
+        logging_steps=logging_steps,
+        save_steps=save_steps,
+        eval_steps=eval_steps,
+        fp16=fp16,
+        save_total_limit=save_total_limit,
+        push_to_hub=False,
+        learning_rate=learning_rate,
+        evaluation_strategy="steps",
+    )
 
-    # #intialising trainer
-    # trainer = Trainer(
-    #     model=model,
-    #     args=training_args,
-    #     data_collator=data_collator,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=eval_dataset,
-    # )
+    #intialising trainer
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        data_collator=data_collator,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+    )
     
-    # #training the model
-    # trainer.train()
+    #training the model
+    trainer.train()
 
 
 if __name__ == "__main__":
