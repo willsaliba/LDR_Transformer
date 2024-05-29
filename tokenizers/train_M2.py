@@ -7,16 +7,16 @@ from tokenizers.pre_tokenizers import Split, ByteLevel
 from tokenizers.trainers import BpeTrainer
 from transformers import PreTrainedTokenizerFast
 
-### HYPER PARAMS ###
-vocab_size = 4150
-tokenizer_save_path = "path/to/save/tokenizer"
-tokenizer_train_path = "path/to/training/ldr/files"
+### HYPER PARAMS ### 1150 4150
+vocab_size = 1150
+tokenizer_train_path = "/Users/willsaliba/Documents/code/uni/advTopics/data/rand/rand8/train"
+tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/m2_tokenizers/rand8_base"
 
-#creating BPE tokenizer 
+#creating BPE tokenizer
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
 
 #adding GPT4 pretokenisation + byte conversion for chars (allows this to work)
-re_pattern = r"(?i)[sdmt]|ll|ve|re|[^\r\n\w]?+[a-zA-Z]+|\d{1,3}|\s?[^\s\w]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"
+re_pattern = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
 tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
     Split(pattern=Regex(re_pattern), behavior="isolated"),
     ByteLevel(add_prefix_space=False, use_regex=False)
