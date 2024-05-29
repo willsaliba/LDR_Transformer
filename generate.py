@@ -4,22 +4,21 @@ import torch
 from transformers import AutoModelForCausalLM, GenerationConfig, AutoTokenizer
 import typer
 
-
 def main(
-    checkpoint_dir: Path,
-    tokenizer_params_path: Path = Path("./tokenizer/"),
-    max_new_tokens: int = 1280,
+    checkpoint_dir: Path = Path("/Users/willsaliba/Documents/code/uni/advTopics/models/OMR8_M2T"),
+    tokenizer_params_path: Path = Path("/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/m2_tokenizers/omr8_turbo"),
+    max_new_tokens: int = 500,
     top_k: int = 51,
     top_p: float = 0.85,
     do_sample: bool = True,
     output_file_path: Path = Path("gen.ldr"),
+    n_positions: int = 1536,
 ):
-    device = (
-        torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-    )
+    device = (torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu"))
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_params_path)
-    # See: https://github.com/huggingface/transformers/issues/4122#issuecomment-713433149
-    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    tokenizer.model_max_length = n_positions
+
     model = AutoModelForCausalLM.from_pretrained(checkpoint_dir).eval().to(device)
     generation_config = GenerationConfig(
         max_length=model.config.n_positions,
@@ -41,3 +40,4 @@ def main(
 
 if __name__ == "__main__":
     typer.run(main)
+ 
