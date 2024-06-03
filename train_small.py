@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from transformers import (
+    GPT2Tokenizer,
     AutoModelForCausalLM,
     AutoTokenizer,
     GPT2Config,
@@ -17,10 +18,16 @@ from transformers import (
 )
 import typer
 
-FN_P = "([-+]?(?:\d*\.*\d+))"
-LDR_INSTRUCTION_REGEX_PATTERN = re.compile(
-    rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)"
-)
+"""
+"""
+
+quartonian = False
+if quartonian:
+    FN_P = r"([-+]?(?:\d*\.*\d+))"
+    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
+else:
+    FN_P = r"([-+]?(?:\d*\.*\d+))"
+    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
 
 def load_all_ldrs(root_dir: Path, decimals: int = 2):
     """
@@ -39,16 +46,13 @@ def load_all_ldrs(root_dir: Path, decimals: int = 2):
         file_lines = []
         for line in src_file.read_text(encoding="utf-8").splitlines():
             m = LDR_INSTRUCTION_REGEX_PATTERN.findall(line)
-            if len(m) != 1:
-                continue
+            if len(m) != 1: continue
             processed = []
             for numeric_entry in m[0][:-1]:
                 if int(float(numeric_entry)) == float(numeric_entry):
                     processed.append(str(int(float(numeric_entry))))
                 else:
-                    processed.append(
-                        str(np.round(float(numeric_entry), decimals=decimals))
-                    )
+                    processed.append(str(np.round(float(numeric_entry), decimals=decimals)))
             processed.append(m[0][-1])  # part ID
             file_lines.append(" ".join(processed))
         all_lines.append("\n".join(file_lines))
@@ -67,11 +71,11 @@ class LDRTextDataset(Dataset):
 
 def main(
     #important params
-    ldr_root_dir: Path = Path("data/omr/omr8"),
-    tokenizer_dir: Path = Path("hugging_face/tokenizers/m2_tokenizers/omr8_base"),
-    output_dir: Path = Path("./OMR8_M2B/"),
-    model_name: str = "omr8_m2b",
-    custom_tokenizer = True,
+    ldr_root_dir: Path = Path("data/rand8_clean"),
+    tokenizer_dir: Path = Path("hugging_face/tokenizers/"),
+    output_dir: Path = Path("./TEST/"),
+    model_name: str = "rand8_eng",
+    custom_tokenizer: bool = False,
     #other params
     checkpoint_dir: T.Optional[Path] = None,
     n_positions: int = 1536,
@@ -80,7 +84,7 @@ def main(
     logging_steps: int = 10000,
     save_steps: int = 10000,
     eval_steps: int = 10000,
-    fp16: bool = False,
+    fp16: bool = True,
     save_total_limit: int = 5,
     learning_rate: float = 1e-5
 ):
@@ -88,16 +92,21 @@ def main(
     eval_lines = load_all_ldrs(ldr_root_dir / "test")
     if not train_lines or not eval_lines: logger.error("Training or evaluation dataset is empty. Check your data source.")
 
-    if custom_tokenizer: tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir)
-    else: tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    if custom_tokenizer == True:
+        print("Loading M2") 
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir)
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    else: 
+        print("Loading GPT2") 
+        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        tokenizer.pad_token = tokenizer.eos_token
     tokenizer.model_max_length = n_positions
 
     train_dataset = LDRTextDataset(train_lines, tokenizer)
     eval_dataset = LDRTextDataset(eval_lines, tokenizer)
 
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer,mlm=False,)
-    config = GPT2Config(vocab_size=tokenizer.vocab_size,n_positions=n_positions,)
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False,)
+    config = GPT2Config(vocab_size=tokenizer.vocab_size, n_positions=n_positions,)
     
     if checkpoint_dir and checkpoint_dir.exists(): model = AutoModelForCausalLM.load_pretrained(checkpoint_dir)
     else: model = AutoModelForCausalLM.from_config(config)

@@ -8,10 +8,10 @@ from tokenizers.decoders import ByteLevel as PostByteLevel
 from tokenizers.trainers import BpeTrainer
 from transformers import PreTrainedTokenizerFast
 
-### HYPER PARAMS ### 1150 4150
-vocab_size = 1150
-tokenizer_train_path = "/Users/willsaliba/Documents/code/uni/advTopics/data/rand8/train"
-tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/m2_tokenizers/rand8"
+### HYPER PARAMS ### 140 or 1042
+vocab_size = 10000
+tokenizer_train_path = "/Users/willsaliba/Documents/code/uni/advTopics/data/omr8_clean"
+tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/omr8_base"
 
 #creating BPE tokenizer
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
@@ -41,19 +41,20 @@ for file_name in os.listdir(tokenizer_save_path):
 fast_tokenizer = PreTrainedTokenizerFast(tokenizer_object=tokenizer)
 fast_tokenizer.save_pretrained(tokenizer_save_path)
 
-print("\n\n--- GPT4 BPE TOKENIZER SAVED ---\n\n")
+print("\n\n--- M2 TOKENIZER SAVED ---\n\n")
 print(f"FINAL SIZE: {len(tokenizer.get_vocab())}")
 
 test_text = """
-1 0 -50.000000 0.000000 70.000000 0.000000 0.000000 -1.000000 0.000000 1.000000 0.000000 1.000000 0.000000 0.000000 3034.dat
-1 7 -50.000000 -8.000000 90.000000 1.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 1.000000 4600.dat
-1 0 -50.000000 -8.000000 60.000000 1.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 1.000000 3023.dat
-1 0 -60.000000 -8.000000 20.000000 0.000000 0.000000 1.000000 0.000000 1.000000 0.000000 -1.000000 0.000000 0.000000 4081.dat
-1 0 -40.000000 -8.000000 20.000000 0.000000 0.000000 -1.000000 0.000000 1.000000 0.000000 1.000000 0.000000 0.000000 4081.dat
-1 0 -50.000000 -16.000000 80.000000 -1.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 -1.000000 3023.dat
-1 0 -80.000000 -6.000000 -6.000000 0.000000 0.000000 1.000000 1.000000 0.000000 0.000000 0.000000 1.000000 0.000000 3062.dat
-1 0 -80.000000 -6.000000 46.000000 0.000000 0.000000 -1.000000 1.000000 0.000000 0.000000 0.000000 -1.000000 0.000000 3062.dat
+1 0 0 0 0 0 0 -1 0 1 0 1 0 0 3832.dat 
+1 0 0 -24 70 -1 0 0 0 1 0 0 0 -1 3004.dat 
+1 0 0 -8 10 -1 0 0 0 1 0 0 0 -1 3710.dat 
+1 0 0 -8 -20 -1 0 0 0 1 0 0 0 -1 3020.dat 
+1 0 0 -16 -60 -1 0 0 0 1 0 0 0 -1 3788.dat 
+1 0 0 -8 -90 -1 0 0 0 1 0 0 0 -1 3710.dat 
+1 0 0 8 -60 0 0 -1 0 1 0 1 0 0 3022.dat 
+1 0 0 8 80 0 0 -1 0 1 0 1 0 0 3022.dat 
 """
+
 encoding = fast_tokenizer.encode(test_text)
 decoding = fast_tokenizer.decode(encoding)
 
