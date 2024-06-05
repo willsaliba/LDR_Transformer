@@ -10,8 +10,8 @@ from transformers import PreTrainedTokenizerFast
 
 ### HYPER PARAMS ### 140 or 1042
 vocab_size = 10000
-tokenizer_train_path = "/Users/willsaliba/Documents/code/uni/advTopics/data/omr8_clean"
-tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/omr8_base"
+tokenizer_train_path = "data/RAND_Sorted/train"
+tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/R8_M2_Sorted"
 
 #creating BPE tokenizer
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
