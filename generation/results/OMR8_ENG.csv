@@ -1,0 +1,9 @@
+Metric,Average
+Position Accuracy (MSE),62580.39351575
+Orientation Accuracy (Geodesic Distance),2.3998041155260803
+Quaternion Orientation Accuracy,0.41273178656478376
+Color Accuracy,0.4000
+Shape Accuracy,0.1135
+Color Set Accuracy,0.4425
+Shape Set Accuracy,0.1485
+F1B Score,0.1015
