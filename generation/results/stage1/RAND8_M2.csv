@@ -1,0 +1,8 @@
+Metric,Average
+Position Accuracy (MSE),2734.6413
+Quaternion Orientation Accuracy,0.5122
+Color Accuracy,0.1785
+Shape Accuracy,0.1595
+Color Set Accuracy,0.3040
+Shape Set Accuracy,0.2815
+F1B Score,0.0530

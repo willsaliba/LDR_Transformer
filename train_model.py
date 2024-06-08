@@ -21,7 +21,7 @@ import typer
 """
 """
 
-quartonian = False
+quartonian = True
 if quartonian:
     FN_P = r"([-+]?(?:\d*\.*\d+))"
     LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
@@ -29,13 +29,13 @@ else:
     FN_P = r"([-+]?(?:\d*\.*\d+))"
     LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
 
-def load_all_ldrs(root_dir: Path, decimals: int = 2):
+def load_all_ldrs(root_dir: Path, decimals: int = 3):
     """
     This reads all LDR files from the specified directory and rounds up all numeric entries to the 
     specified number of decimals; rounding works well for synthetic data, use with care on real models.
     """
     print("Beginning Processing all Lines")    
-    src_files = sorted(root_dir.glob("*.mpd"))
+    src_files = sorted(root_dir.glob("*.mpd")) + sorted(root_dir.glob("*.ldr"))
     all_lines = []
     for src_file in src_files:
         # Skip meta data files
@@ -71,10 +71,10 @@ class LDRTextDataset(Dataset):
 
 def main(
     #important params
-    ldr_root_dir: Path = Path("data/OMR_Sorted"),
-    tokenizer_dir: Path = Path("tokenizers/rand8"),
-    output_dir: Path = Path("models/secnd_models"),
-    model_name: str = "Omr_M2_Sorted",
+    ldr_root_dir: Path = Path("data/O_Apex"),
+    tokenizer_dir: Path = Path("tokenizers/third/Omr_Apex_M2"),
+    output_dir: Path = Path("models/third_models"),
+    model_name: str = "Omr_APEX",
     custom_tokenizer: bool = True,
     #other params
     checkpoint_dir: T.Optional[Path] = None,

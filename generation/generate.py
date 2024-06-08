@@ -21,7 +21,7 @@ def load_80_percent_prompt(root_dir: Path, decimals: int = 2):
     This reads all LDR files from the specified directory and rounds up all numeric entries to the 
     specified number of decimals; rounding works well for synthetic data, use with care on real models.
     """
-    src_files = sorted(root_dir.glob("*.mpd"))
+    src_files = sorted(root_dir.glob("*.mpd")) + sorted(root_dir.glob("*.ldr"))
     all_lines = []
     for src_file in src_files:
         # Skip meta data files

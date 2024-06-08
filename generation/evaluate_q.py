@@ -11,15 +11,28 @@ import itertools
 from multiset import Multiset
 import pandas as pd
 
-quartonian = False
-if quartonian:
-    FN_P = r"([-+]?(?:\d*\.*\d+))"
-    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
-else:
-    FN_P = r"([-+]?(?:\d*\.*\d+))"
-    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
+def quaternion_to_rotation_matrix(q):
+    w, x, y, z = q
+    return np.array([
+        [1 - 2*y**2 - 2*z**2, 2*x*y - 2*z*w, 2*x*z + 2*y*w],
+        [2*x*y + 2*z*w, 1 - 2*x**2 - 2*z**2, 2*y*z - 2*x*w],
+        [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x**2 - 2*y**2]
+    ])
 
-def parse_ldr_lines(lines, decimals=2):
+def convert_line_to_matrix(line):
+    parts = line.strip().split()
+    if len(parts) < 9 or parts[0] != '1':
+        return line  # Return the line unchanged if it does not fit the expected format
+    
+    quaternion_elements = list(map(float, parts[5:9]))
+    matrix = quaternion_to_rotation_matrix(quaternion_elements)
+    matrix_string = ' '.join(f"{val:.6f}" for row in matrix for val in row)
+    new_line = f"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {matrix_string} {parts[-1]}"
+    return new_line
+
+def parse_ldr_lines(lines):
+    converted_lines = [convert_line_to_matrix(line) for line in lines]
+
     assembly = {
         'shape': [],
         'color': [],
@@ -29,11 +42,11 @@ def parse_ldr_lines(lines, decimals=2):
         'edges': ([], [])
     }
 
-    for line in lines:
+    for line in converted_lines:
         parts = line.strip().split()
         if len(parts) < 15 or parts[0] != '1':
             continue
-
+        
         color = int(parts[1])
         shape_file = parts[-1]
         position = np.array(list(map(float, parts[2:5])))
@@ -51,16 +64,6 @@ def parse_ldr_lines(lines, decimals=2):
 
     assembly['pose'] = np.array(assembly['pose'])
     return assembly
-
-def round_line(line, decimals=2):
-    m = LDR_INSTRUCTION_REGEX_PATTERN.findall(line)
-    if len(m) != 1: return line
-    processed = []
-    for numeric_entry in m[0][:-1]:
-        if int(float(numeric_entry)) == float(numeric_entry): processed.append(str(int(float(numeric_entry))))
-        else: processed.append(str(np.round(float(numeric_entry), decimals=decimals)))
-    processed.append(m[0][-1])
-    return " ".join(processed)
 
 def position_accuracy(predicted, ground_truth):
     try:
@@ -183,26 +186,27 @@ def try_convert_to_float(s):
         return False
 
 def check_line(entries):
-    if len(entries) < 15: return False
+    if len(entries) < 10: return False
     if entries[0] != '1': return False
     if not entries[1].isdigit(): return False
-    for i in range(2, 13):
+    for i in range(2, 8):
         if not try_convert_to_float(entries[i]): return False
-    if not entries[14].endswith('.dat'): return False
+    if not entries[9].endswith('.dat'): return False
     return True
 
 def evaluate_file(file_path, tokenizer, model, device):
     print(f"Processing file: {file_path}")
     try:
         #reading in lines and ensuring there is the correct number of lines
-        with open(file_path, 'r', encoding='utf-8') as file: all_lines = [round_line(line) for line in file.readlines()]
+        with open(file_path, 'r', encoding='utf-8') as file: 
+            all_lines = [re.sub(r'\.0+', '', line.strip()) for line in file.readlines()]
         if len(all_lines) != 8: 
             print(f"Invalid number of lines in file {file_path}: {len(all_lines)}\n")
             return None
 
         # Get prompt and evaluation bricks, ensuring we don't go out of bounds
         prompt_bricks, eval_bricks = all_lines[:6], all_lines[6:8]
-        prompt_text = "\n".join(prompt_bricks) + "\n"
+        prompt_text = "\n".join(prompt_bricks) 
 
         #converting prompt to tensor and generating output
         prompt = tokenizer(prompt_text, return_tensors='pt')
@@ -217,7 +221,7 @@ def evaluate_file(file_path, tokenizer, model, device):
             pad_token_id=tokenizer.pad_token_id,
         )
         decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        generated_lines = [round_line(line.strip()) for line in decoded_output.split("\n")]
+        generated_lines = [line.strip() for line in decoded_output.split("\n")]
 
         #filtering out lines that are not bricks
         filtered_lines = []
@@ -225,14 +229,13 @@ def evaluate_file(file_path, tokenizer, model, device):
             entries = line.split()
             if check_line(entries) == False: return None
             #processing last line which for some reason trails on
-            if len(filtered_lines) == 7 and entries[0] == '1' and entries[14].endswith('.dat'):
-                filtered_lines.append(" ".join(entries[:15]) + "\n")
+            if len(filtered_lines) == 7:
+                filtered_lines.append(" ".join(entries[:10]) + "\n")
                 break
-            elif (len(entries) == 15 and entries[0] == '1' and entries[-1].endswith('.dat')):
-                filtered_lines.append(line)
+            else: filtered_lines.append(line)
         if len(filtered_lines) != 8: return None
         generated_bricks = filtered_lines[6:8]
-        generated_bricks = eval_bricks
+        # generated_bricks = eval_bricks
         
         #inspecting results and converting to parasble format
         print(f"target: {eval_bricks}")
@@ -244,7 +247,8 @@ def evaluate_file(file_path, tokenizer, model, device):
         position_acc = position_accuracy(generated_assembly, target_assembly)
         orientation_acc, quaternion_orientation_acc = orientation_accuracy(generated_assembly, target_assembly), quaternion_orientation_accuracy(generated_assembly, target_assembly)
         color_acc, shape_acc = color_accuracy(generated_assembly, target_assembly), shape_accuracy(generated_assembly, target_assembly)
-        color_set_acc, shape_set_acc = color_set_accuracy(generated_assembly, target_assembly), shape_set_accuracy(generated_assembly, target_assembly)
+        color_set_acc = color_set_accuracy(generated_assembly, target_assembly) #issue
+        shape_set_acc = shape_set_accuracy(generated_assembly, target_assembly)
         f1b_score = f1b(generated_assembly, target_assembly)
         print(f"Pos: {position_acc:.3f} Orien: {quaternion_orientation_acc:.3f} Color: {color_acc:.3f} Shape: {shape_acc:.3f} ColorSet: {color_set_acc:.3f} ShapeSet: {shape_set_acc:.3f} F1B: {f1b_score:.3f}\n")
 
@@ -264,10 +268,10 @@ def evaluate_file(file_path, tokenizer, model, device):
         return None
 
 def main(
-    model_dir: Path = Path("models/secnd_models/Omr_M2_Sorted"), 
-    tokenizer_path: Path = Path("tokenizers/O8_M2_Sorted"), 
-    test_files_path: Path = Path("data/OMR_Sorted/test"), 
-    csv_filename: str = "generation/results/OMR_M2_Sorted.csv",
+    model_dir: Path = Path("models/secnd_models/Omr_M2B_Quat"), 
+    tokenizer_path: Path = Path("tokenizers/secnd/O8_M2B_Quat"), 
+    test_files_path: Path = Path("data/mini_q"), 
+    csv_filename: str = "generation/results/test.csv",
     custom_tokenizer: bool = True,
     n_positions: int = 1536,
     num_test_files: int = 1000,
@@ -361,8 +365,3 @@ if __name__ == "__main__":
     typer.run(main)
 
 
-
-# model_dir: Path = Path("models/X"), 
-# tokenizer_path: Path = Path("hugging_face/tokenizers/"), 
-# test_files_path: Path = Path("data/rand8/test"), 
-# csv_filename: str = "OmrM2_Sorted.csv",

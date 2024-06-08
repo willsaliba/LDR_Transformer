@@ -21,8 +21,13 @@ These include:
 - create_quaternion_dataset: creates a dataset where rotation matrices are converted to quaternions
 """
 
-FN_P = r"([-+]?(?:\d*\.*\d+))"
-LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
+quartonian = True
+if quartonian:
+    FN_P = r"([-+]?(?:\d*\.*\d+))"
+    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
+else:
+    FN_P = r"([-+]?(?:\d*\.*\d+))"
+    LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
 
 def initial_preprocessing(root_dir: Path, save_dir: Path, decimals: int = 2):
     #This function removes all metadata from files and round floating point entries to 2 decimal places
@@ -73,6 +78,7 @@ def find_distance(point1, point2):
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
 
 def create_sorted_dataset(root_dir: Path, save_dir: Path):
+    #this function creates a copy of the dataset where individual brick lines are sorted based on position
     all_files = list(root_dir.glob("*.ldr")) + list(root_dir.glob("*.mpd")) 
 
     for file in all_files:
@@ -100,16 +106,88 @@ def create_sorted_dataset(root_dir: Path, save_dir: Path):
             with open(save_path, 'w') as outfile: outfile.writelines(final_lines)
             print("saved file: ", file.name)
 
+def rotation_matrix_to_quaternion(matrix_list):
+    # Convert the list to a 3x3 numpy array
+    R = np.array(matrix_list).reshape(3, 3)
+    
+    trace = R[0, 0] + R[1, 1] + R[2, 2]
+    if trace > 0:
+        q_w = np.sqrt(1.0 + trace) / 2.0
+        q_x = (R[2, 1] - R[1, 2]) / (4.0 * q_w)
+        q_y = (R[0, 2] - R[2, 0]) / (4.0 * q_w)
+        q_z = (R[1, 0] - R[0, 1]) / (4.0 * q_w)
+    else:
+        if R[0, 0] > R[1, 1] and R[0, 0] > R[2, 2]:
+            q_x = np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2]) / 2.0
+            q_w = (R[2, 1] - R[1, 2]) / (4.0 * q_x)
+            q_y = (R[0, 1] + R[1, 0]) / (4.0 * q_x)
+            q_z = (R[0, 2] + R[2, 0]) / (4.0 * q_x)
+        elif R[1, 1] > R[2, 2]:
+            q_y = np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2]) / 2.0
+            q_w = (R[0, 2] - R[2, 0]) / (4.0 * q_y)
+            q_x = (R[0, 1] + R[1, 0]) / (4.0 * q_y)
+            q_z = (R[1, 2] + R[2, 1]) / (4.0 * q_y)
+        else:
+            q_z = np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1]) / 2.0
+            q_w = (R[1, 0] - R[0, 1]) / (4.0 * q_z)
+            q_x = (R[0, 2] + R[2, 0]) / (4.0 * q_z)
+            q_y = (R[1, 2] + R[2, 1]) / (4.0 * q_z)
+    
+    quaternion = [q_w, q_x, q_y, q_z]
+    quaternion_rounded = [round(q, 3) for q in quaternion]
+    return quaternion_rounded
+
+def quaternion_to_rotation_matrix_list(quaternion):
+    q_w, q_x, q_y, q_z = quaternion
+
+    # Compute the elements of the rotation matrix
+    R = [
+        1 - 2 * (q_y**2 + q_z**2), 2 * (q_x * q_y - q_z * q_w), 2 * (q_x * q_z + q_y * q_w),
+        2 * (q_x * q_y + q_z * q_w), 1 - 2 * (q_x**2 + q_z**2), 2 * (q_y * q_z - q_x * q_w),
+        2 * (q_x * q_z - q_y * q_w), 2 * (q_y * q_z + q_x * q_w), 1 - 2 * (q_x**2 + q_y**2)
+    ]
+
+    # Convert each element to string
+    rot_list_rounded = [round(r, 2) for r in R]
+    return rot_list_rounded
 
 def create_quaternion_dataset(root_dir: Path, save_dir: Path):
-    pass
+    #this function creates the quat datasets
+    print("\nConverting to Quaternions")
+    all_files = list(root_dir.glob("*.ldr")) + list(root_dir.glob("*.mpd"))
+    for file in all_files:
+        with open(file, 'r') as f:
+            lines = f.readlines()
+            procced_lines = []
+            for line in lines:
+                entries = line.split()
+                try:
+                    rotation_matrix = [float(entry) for entry in entries[5:14]]
+                    quaternion = rotation_matrix_to_quaternion(rotation_matrix)
+                    processed_line = " ".join(entries[:5] + list(map(str, quaternion))) + " " + entries[14] + '\n'
+                    procced_lines.append(processed_line)
+                    if rotation_matrix != quaternion_to_rotation_matrix_list(quaternion): print("Inaccurate")
+                          
+                except ValueError as e:
+                    print(f"Skipping line due to error: {line}")
+                    continue
+                except IndexError as e:
+                    print(f"Skipping line due to index error: {line}")
+                    continue
 
+            #write output file
+            save_path = Path(save_dir, file.name)
+            with open(save_path, 'w') as outfile: outfile.writelines(procced_lines)
+            print("processed file: ", file.name)
+    
+    print("\nRemoving all trailing zero decimal places")
+    initial_preprocessing(save_dir, save_dir, 3)
 
 def main():
-    root_dir = Path("data/rand8_clean/train")
-    save_dir = Path("data/RAND_Sorted/train")
 
-    create_sorted_dataset(root_dir, save_dir)
+    create_quaternion_dataset(Path("data/mini"), Path("data/mini_q"))
+
+    
 
 if __name__ == "__main__":
     typer.run(main)

@@ -9,9 +9,9 @@ from tokenizers.trainers import BpeTrainer
 from transformers import PreTrainedTokenizerFast
 
 ### HYPER PARAMS ### 140 or 1042
-vocab_size = 10000
-tokenizer_train_path = "data/RAND_Sorted/train"
-tokenizer_save_path = "/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/R8_M2_Sorted"
+vocab_size = 600
+tokenizer_train_path = "data/stage3/O_Apex/train"
+tokenizer_save_path = "tokenizers/stage3/Omr_Apex_M2M"
 
 #creating BPE tokenizer
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
@@ -44,8 +44,7 @@ fast_tokenizer.save_pretrained(tokenizer_save_path)
 print("\n\n--- M2 TOKENIZER SAVED ---\n\n")
 print(f"FINAL SIZE: {len(tokenizer.get_vocab())}")
 
-test_text = """
-1 0 0 0 0 0 0 -1 0 1 0 1 0 0 3832.dat 
+test_text = """1 0 0 0 0 0 0 -1 0 1 0 1 0 0 3832.dat 
 1 0 0 -24 70 -1 0 0 0 1 0 0 0 -1 3004.dat 
 1 0 0 -8 10 -1 0 0 0 1 0 0 0 -1 3710.dat 
 1 0 0 -8 -20 -1 0 0 0 1 0 0 0 -1 3020.dat 
@@ -59,4 +58,5 @@ encoding = fast_tokenizer.encode(test_text)
 decoding = fast_tokenizer.decode(encoding)
 
 print("Equal: ", test_text == decoding)
+print("Decoding:")
 print(decoding)
