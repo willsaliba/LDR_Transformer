@@ -1,10 +1,10 @@
-**ML LEGO COMPOSITIONAL UNDERSTANDING**  
+***ML LEGO COMPOSITIONAL UNDERSTANDING***  
 This repository contains the code to create a hugging face model which can be trained on LEGO ldr files, 
 enabling the model to generate new assemblies and complete LEGO assemblies given intial bricks.  
 
 The sucess of these models can be inspected in this report:  
 
-*Overview*  
+**Overview**  
 There are multiple LDR datasets available for download here:  
 There are multiple trained models available for download here:  
 
