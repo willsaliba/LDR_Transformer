@@ -1,6 +1,5 @@
 Metric,Average
 Position Accuracy (MSE),2649.3173333333334
-Orientation Accuracy (Geodesic Distance),2.784972764453624
 Quaternion Orientation Accuracy,0.5061088618146629
 Color Accuracy,0.1625
 Shape Accuracy,0.1735

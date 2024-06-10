@@ -8,7 +8,6 @@ from concurrent.futures import ProcessPoolExecutor
 import re
 
 quartonian = False
-
 if quartonian:
     FN_P = r"([-+]?(?:\d*\.*\d+))"
     LDR_INSTRUCTION_REGEX_PATTERN = re.compile(rf"(1)\s+(\d+)\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+{FN_P}\s+(.*)")
@@ -43,15 +42,15 @@ def load_80_percent_prompt(root_dir: Path, decimals: int = 2):
     return all_lines[0]
 
 def main(
-    ldr_root_dir: Path = Path("/Users/willsaliba/Documents/code/uni/advTopics/data/mini/"),
-    checkpoint_dir: Path = Path("/Users/willsaliba/Documents/code/uni/advTopics/models/OMR8_M2T"),
-    tokenizer_params_path: Path = Path("/Users/willsaliba/Documents/code/uni/advTopics/tokenizers/omr8_turbo"),
+    ldr_root_dir: Path = Path("data/mini"),
+    checkpoint_dir: Path = Path("models/stage1/OMR8_M2B"),
+    tokenizer_params_path: Path = Path("tokenizers/stage1/omr8_base"),
     max_new_tokens: int = 500,
     top_k: int = 51,
     top_p: float = 0.85,
     do_sample: bool = True,
-    temp_file_path: Path = Path("outputs/a_out.ldr"),
-    output_file_path: Path = Path("outputs/a_gen.ldr"),
+    temp_file_path: Path = Path("generation/a_unprocessed.ldr"),
+    output_file_path: Path = Path("generation/assembly.ldr"),
     n_positions: int = 1536,
 ):
     #loading tokenizer

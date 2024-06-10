@@ -268,13 +268,13 @@ def evaluate_file(file_path, tokenizer, model, device):
         return None
 
 def main(
-    model_dir: Path = Path("models/secnd_models/Omr_M2B_Quat"), 
-    tokenizer_path: Path = Path("tokenizers/secnd/O8_M2B_Quat"), 
-    test_files_path: Path = Path("data/mini_q"), 
-    csv_filename: str = "generation/results/test.csv",
+    model_dir: Path = Path("models/stage2/O_Quat_M2B"), 
+    tokenizer_path: Path = Path("tokenizers/stage2/O8_M2B_Quat"), 
+    test_files_path: Path = Path("data/stage2/OMR_Quat/test"), 
+    csv_filename: str = "plz.csv",
     custom_tokenizer: bool = True,
     n_positions: int = 1536,
-    num_test_files: int = 1000,
+    num_test_files: int = 100,
 ):
     #intialising model and device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

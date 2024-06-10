@@ -16,10 +16,11 @@ tokenizer_save_path = "tokenizers/stage3/Omr_Apex_M2M"
 #creating BPE tokenizer
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
 
-#adding GPT4 pretokenisation + byte conversion for chars (allows this to work)
-re_pattern = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+#adding GPT4 pretokenisation
+gpt4_pattern = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+
 tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
-    Split(pattern=Regex(re_pattern), behavior="isolated"),
+    Split(pattern=Regex(gpt4_pattern), behavior="isolated"),
     ByteLevel(add_prefix_space=False, use_regex=False)
 ])
 tokenizer.decoder = PostByteLevel()
