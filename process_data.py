@@ -183,9 +183,26 @@ def create_quaternion_dataset(root_dir: Path, save_dir: Path):
     print("\nRemoving all trailing zero decimal places")
     initial_preprocessing(save_dir, save_dir, 3)
 
+def print_ave_chars_per_file(root_dir: Path):
+    #this function prints the average number of characters per file in a dataset
+    all_files = list(root_dir.glob('*.ldr')) + list(root_dir.glob('*.mpd'))
+    total_chars = 0
+    for file in all_files:
+        with open(file, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                total_chars += len(line)
+    print(f"dir: {root_dir}")
+    print(f"Avg Char Per File {total_chars / len(all_files)}\n")
+
 def main():
 
-    create_quaternion_dataset(Path("data/mini"), Path("data/mini_q"))
+    
+    print_ave_chars_per_file(Path("data/stage1/rand8_clean/train"))
+    print_ave_chars_per_file(Path("data/stage2/RAND_Quat/train"))
+
+    print_ave_chars_per_file(Path("data/stage1/omr8_clean/train"))
+    print_ave_chars_per_file(Path("data/stage2/OMR_Quat/train"))
 
     
 
