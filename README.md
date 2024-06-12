@@ -3,6 +3,8 @@ This repository contains the code to create a hugging face model which can be tr
 enabling the model to generate new assemblies and complete LEGO assemblies given intial bricks.  
 
 The sucess of these models can be inspected in this report:  
+https://drive.google.com/file/d/1fSLChM3wuI31gNa0wcjpwqkbk-Yhape1/view?usp=sharing  
+
 Make and Break LDR Datasets and all trained models available for download here:  
 https://drive.google.com/drive/folders/1SQXPPRtVDa1hw90gDMqRABf_Ags_SUwr?usp=sharing  
 
